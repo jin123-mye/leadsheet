@@ -162,8 +162,9 @@ function renderHome() {
     ${DEMO ? `
     <div class="add demo-card">
       <p><b>공개 데모예요.</b> 실제 버전은 맥에서 도는 분석 엔진에 유튜브 링크나 음원 파일을 넣으면 1분 안팎에 코드표·오선보를 만들어요(개인용이라 업로드는 막아 뒀어요).</p>
-      <p>아래 세 곡은 저작권 보호기간이 끝난 <b>유명 곡(공유저작물)</b>이고, 연주·녹음·코드 반주는 <b>직접 합성</b>해서 음원 권리 문제도 없어요. 화면은 엔진이 분석한 결과 그대로이고, 곡 이름 아래 초록 숫자는 정답 악보 대비 정확도예요.
+      <p>위의 세 곡은 저작권 보호기간이 끝난 <b>유명 곡(공유저작물)</b>이고, 연주·녹음·코드 반주는 <b>직접 합성</b>해서 음원 권리 문제도 없어요. 화면은 엔진이 분석한 결과 그대로이고, 곡 이름 아래 초록 숫자는 정답 악보 대비 정확도예요.
       합성 목소리는 악기 분리(Demucs)가 보컬로 잘 못 빼서, 멜로디는 멜로디 트랙을 같은 엔진으로 받아적었어요.</p>
+      <p>마지막 곡은 자유 이용이 가능한 <b>실제 녹음</b>(미 공군 군악대 연주, 퍼블릭 도메인)을 합성 없이 엔진에 그대로 넣은 결과예요. 정답 악보가 없어 정확도는 표시하지 않아요.</p>
       ${window.LEADSHEET_REPO ? `<p><a href="${esc(window.LEADSHEET_REPO)}" target="_blank" rel="noopener">소스 코드·설명 보기 →</a></p>` : ""}
     </div>` : `
     <form class="add" id="addForm" autocomplete="off">
@@ -199,6 +200,7 @@ function renderHome() {
         <span class="key${segs.length > 1 ? " multi" : ""}">${esc(badge)}</span>
         <span class="meta"><div class="t">${esc(s.title)}</div>
         <div class="a">${esc([s.artist, `${Math.round(s.tempo)} BPM`, fmtTime(s.duration)].filter(Boolean).join(" · "))}</div>
+        ${s.note ? `<div class="acc note">${esc(s.note)}</div>` : ""}
         ${s.accuracy ? `<div class="acc">정답 대비 코드 ${Math.round(s.accuracy.chord_root * 100)}% · 조 ${Math.round(s.accuracy.key_time * 100)}% · 박자표 ${Math.round(s.accuracy.bars_meter * 100)}% · 멜로디 ${Math.round(s.accuracy.melody_onset_f * 100)}%</div>` : ""}</span>
       </a></li>`;
     }).join("");
@@ -285,7 +287,8 @@ function renderSong(id) {
     const u = song.user || {};
     Object.assign(S, {
       view: u.view || "full", transpose: u.transpose || 0, capo: u.capo || 0,
-      numerals: !!u.numerals, edits: u.edits || {}, title: u.title || song.title, sheet: u.sheet || "chords",
+      numerals: !!u.numerals, edits: u.edits || {}, title: u.title || song.title,
+      sheet: u.sheet || (song.harmony === false ? "staff" : "chords"), // 반주 없는 노래는 오선보부터
     });
     computeBarMaps();
     computeKeyMap();
@@ -398,6 +401,7 @@ function renderSong(id) {
         <button class="chip edit" id="editBtn">✎ 고치기</button>
       </div>
       <p class="edit-note" id="editNote" hidden>고칠 박을 누르세요. 고친 코드는 다음 코드가 바뀌는 곳까지 이어져요.</p>
+      <p class="nohar" id="noHarmony" hidden>반주(화음) 없이 노래만 있는 녹음이라 코드를 판단할 수 없어요. 멜로디는 오선보에서 보세요.</p>
       <div class="grid" id="grid"></div>
       <div class="staff" id="staff" hidden></div>
     </div>
@@ -498,6 +502,7 @@ function renderSong(id) {
     app.querySelectorAll("[data-sheet]").forEach((b) => b.classList.toggle("on", b.dataset.sheet === S.sheet));
     const staffMode = S.sheet === "staff";
     $("#grid").hidden = staffMode;
+    $("#noHarmony").hidden = staffMode || song.harmony !== false;
     $("#staff").hidden = !staffMode;
     if (staffMode) { $("#grid").innerHTML = ""; beatEls = []; barEls = []; lineEls = []; renderStaff(); }
     else { $("#staff").innerHTML = ""; staffTok = []; renderGrid(); }

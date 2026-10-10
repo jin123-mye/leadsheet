@@ -29,11 +29,14 @@ function abcSpell(p, sig) {
   let a;
   if (L) a = sig.acc[L];
   else {
+    // 조 밖의 음: 이중 ♯/♭은 피하고 제자리표 → (플랫조면 ♭, 샤프조면 ♯) 순으로 고른다(예: D♭장조의 D는 E𝄫이 아니라 D♮)
+    const cands = ABC_LETTERS.map((l) => {
+      let x = amod(pc - ABC_NAT[l]);
+      if (x > 6) x -= 12;
+      return [l, x];
+    }).filter(([, x]) => Math.abs(x) <= 1);
     const dir = sig.flats ? -1 : 1;
-    L = ABC_LETTERS.find((l) => amod(ABC_NAT[l] + sig.acc[l] + dir) === pc)
-      || ABC_LETTERS.find((l) => amod(ABC_NAT[l] + sig.acc[l] - dir) === pc);
-    a = amod(pc - ABC_NAT[L]);
-    if (a > 6) a -= 12;
+    [L, a] = cands.find(([, x]) => x === 0) || cands.find(([, x]) => x === dir) || cands[0];
   }
   const oct = Math.round((p - ABC_NAT[L] - a) / 12) - 1;
   return { L, a, oct };
@@ -109,7 +112,9 @@ function buildAbc(song, labels, opt) {
     // 덩어리 경계: 음 바뀜, 코드 바뀌는 박(코드 기호를 달 자리)
     const chordAt = new Map();
     for (let b = bar.start; b < bar.start + bar.n; b++) {
-      if (b === bar.start || labels[b] !== labels[b - 1]) {
+      const changed = b === 0 || labels[b] !== labels[b - 1];
+      // 마디 첫 박엔 코드를 다시 적어 주되, 'N'(코드 없음)은 바뀌는 곳에만
+      if (changed || (b === bar.start && labels[b] !== "N")) {
         const t = opt.chordText(labels[b], b);
         if (t) chordAt.set(b * g, t);
       }
