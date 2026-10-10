@@ -74,7 +74,7 @@ button { cursor: pointer; }
 }
 .song-item .meta { flex: 1; min-width: 0; }
 .song-item .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.song-item .a { font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-item .a { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
 .empty { color: var(--ink-3); font-size: 15px; padding: 18px 2px; }
 .demo-tag { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 6px; padding: 1px 6px; vertical-align: middle; }
 .demo-card p { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); line-height: 1.55; }

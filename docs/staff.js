@@ -61,6 +61,9 @@ function splitDur(o, len, g, barBeats) {
         (kk === 4 && beat === 0 && barBeats === 4);
       while (k > 1 && !ok(k)) k--;
       take = k * g;
+      // 점4분음표(1.5박): 4/4의 1·3박, 3/4의 1·2박에서 시작하면 붙임줄 대신 점음표로
+      const dottedOk = barBeats === 4 ? beat % 2 === 0 : barBeats === 3 && beat <= 1;
+      if (k === 1 && len >= g * 1.5 && len < g * 2 && dottedOk && g % 2 === 0) take = g * 1.5;
     } else {
       take = Math.min(len, g - (o % g));
     }
