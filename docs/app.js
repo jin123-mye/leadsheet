@@ -17,9 +17,11 @@ const mediaUrl = (id, f) => (DEMO ? `demo/media/${id}/${f}` : `/media/${id}/${f}
 
 async function demoApi(path, opt) {
   const method = (opt.method || "GET").toUpperCase();
+  // GitHub Pages는 10분 캐시라, 데모를 갱신하면 옛 목록이 남는다 → 매번 서버에 바뀌었는지 확인(ETag, 안 바뀌면 304)
   const getJson = async (u) => {
-    const r = await fetch(u);
-    if (!r.ok) throw new Error("데모 데이터를 못 불러왔어요");
+    const b = window.LEADSHEET_BUILD ? `?b=${window.LEADSHEET_BUILD}` : "";
+    const r = await fetch(u + b, { cache: "no-cache" });
+    if (!r.ok) throw new Error(r.status === 404 ? "갱신됨" : "데모 데이터를 못 불러왔어요");
     return r.json();
   };
   let m;
@@ -290,7 +292,14 @@ function renderSong(id) {
     cells = cellTimes(song);
     audio.src = mediaUrl(id, song.audio.mix);
     build();
-  }).catch(() => { app.innerHTML = `<div class="loading">악보를 찾을 수 없어요. <a href="#/">목록으로</a></div>`; });
+  }).catch((e) => {
+    if (DEMO && e.message === "갱신됨") { // 옛 목록의 곡 → 데모가 바뀐 것: 새 목록으로
+      toast("데모 곡이 바뀌었어요. 새 목록을 불러올게요");
+      location.hash = "#/";
+      return;
+    }
+    app.innerHTML = `<div class="loading">악보를 찾을 수 없어요. <a href="#/">목록으로</a></div>`;
+  });
 
   let saveTimer;
   const save = () => {
